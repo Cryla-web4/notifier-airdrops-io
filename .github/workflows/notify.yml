@@ -17,5 +17,18 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install dependencies for Puppeteer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-dev \
+            libxkbcommon-x11-0 \
+            libasound2 \
+            libnss3 \
+            libxss1 \
+            libgtk-3-0 \
+            libatk-bridge2.0-0 \
+            libgbm-dev
+
       - run: npm install
       - run: node index.js
