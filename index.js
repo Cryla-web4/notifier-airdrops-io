@@ -8,7 +8,7 @@ const puppeteer = require('puppeteer');
   await page.goto('https://airdrops.io/');
 
   const data = await page.evaluate(() => {
-    const items = Array.from(document.querySelectorAll('.airdrops > div')).slice(0, 3);
+    const items = Array.from(document.querySelectorAll('.airdrops > div')).slice();
     return items.map(card => ({
       title: card.querySelector('h3')?.innerText ?? 'No Title',
       description: card.querySelector('p')?.innerText ?? 'No Description',
