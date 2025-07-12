@@ -2,33 +2,40 @@ name: Run Airdrop Notifier
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 毎日0時（UTC）に実行 → 日本時間 朝9時
-  workflow_dispatch:
+    - cron: '0 0 * * *'  # 毎日0時（UTC）＝日本時間09:00
+  workflow_dispatch:     # 手動実行ボタンも有効化
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
 
     steps:
+      # ✅ リポジトリのコードを取得
       - uses: actions/checkout@v3
 
+      # ✅ Node.js 環境をセットアップ（v20）
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
+      # ✅ Puppeteer が必要とする Linux ライブラリをインストール
       - name: Install dependencies for Puppeteer
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            libx11-dev \
-            libxkbcommon-x11-0 \
-            libasound2 \
             libnss3 \
             libxss1 \
-            libgtk-3-0 \
             libatk-bridge2.0-0 \
-            libgbm-dev
+            libgtk-3-0 \
+            libx11-xcb1 \
+            libasound2 \
+            libgbm1
 
-      - run: npm install
-      - run: node index.js
+      # ✅ npm で Puppeteer をインストール
+      - name: Install NPM packages
+        run: npm install
+
+      # ✅ スクレイピングを実行
+      - name: Run scraper
+        run: node index.js
