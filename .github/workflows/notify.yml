@@ -1,0 +1,21 @@
+name: Run Airdrop Notifier
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 毎日0時（UTC）に実行 → 日本時間 朝9時
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - run: npm install
+      - run: node index.js
