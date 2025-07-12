@@ -1,8 +1,7 @@
 {
-  "name": "notifier-airdrops",
+  "name": "notifier-airdrops-io",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
