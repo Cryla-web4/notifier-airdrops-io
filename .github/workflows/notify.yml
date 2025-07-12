@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '20'
 
-      # ✅ Puppeteer が必要とする Linux ライブラリをインストール
+      # ✅ Puppeteer に必要な Linux 依存ライブラリをインストール
       - name: Install dependencies for Puppeteer
         run: |
           sudo apt-get update
@@ -29,7 +29,6 @@ jobs:
             libatk-bridge2.0-0 \
             libgtk-3-0 \
             libx11-xcb1 \
-            libasound2 \
             libgbm1
 
       # ✅ npm で Puppeteer をインストール
