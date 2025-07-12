@@ -1,13 +1,11 @@
 {
-  "name": "notifier-airdrops-io",
+  "name": "notifier-airdrops",
   "version": "1.0.0",
-  "description": "くりら式エアドロップ通知Bot",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "Cryla-web4",
-  "license": "MIT",
   "dependencies": {
     "puppeteer": "^21.3.8"
   }
