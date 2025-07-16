@@ -1,43 +1,50 @@
 const puppeteer = require('puppeteer');
-const axios = require('axios');
-require('dotenv').config();
 
 (async () => {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-
-  const page = await browser.newPage();
-  await page.goto('https://airdrops.io/', { waitUntil: 'networkidle2' });
-
-  const airdrops = await page.evaluate(() => {
-    const items = Array.from(document.querySelectorAll('.airdrops > div')).slice(0, 3);
-    return items.map(card => ({
-      title: card.querySelector('h3')?.innerText ?? 'No Title',
-      description: card.querySelector('p')?.innerText ?? 'No Description',
-      link: card.querySelector('a')?.href ?? '',
-    }));
-  });
-
-  await browser.close();
-
-  const message = airdrops.map(drop => 
-    `🪙 *${drop.title}*\n📃 ${drop.description}\n🔗 <${drop.link}>`
-  ).join('\n\n');
-
-  const slackWebhook = process.env.SLACK_WEBHOOK_URL;
-  if (!slackWebhook) {
-    console.error('❌ SLACK_WEBHOOK_URL が未設定です。');
-    process.exit(1);
-  }
-
   try {
-    await axios.post(slackWebhook, {
-      text: `🚀 今日の注目エアドロップ速報（airdrops.io より）\n\n${message}`,
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
-    console.log('✅ Slackに送信しました。');
-  } catch (error) {
-    console.error('❌ Slackへの送信に失敗:', error.message);
+    const page = await browser.newPage();
+
+    await page.goto('https://airdrops.io/', { waitUntil: 'domcontentloaded' });
+
+    const data = await page.evaluate(() => {
+      const items = Array.from(document.querySelectorAll('.airdrops > div')).slice(0, 3);
+      return items.map(card => ({
+        title: card.querySelector('h3')?.innerText ?? 'No Title',
+        description: card.querySelector('p')?.innerText ?? 'No Description',
+        link: card.querySelector('a')?.href ?? '',
+      }));
+    });
+
+    console.log('🪙 最新エアドロップ一覧：');
+    data.forEach(drop => {
+      console.log(`📢 ${drop.title}\n📃 ${drop.description}\n🔗 ${drop.link}\n`);
+    });
+
+    // Slack通知（必要に応じて）
+    const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+    if (webhookUrl) {
+      const payload = {
+        text: `🪙 *最新のAirdrops.io情報（上位3件）*\n\n` + data.map(drop => 
+          `• *${drop.title}*\n${drop.description}\n${drop.link}`
+        ).join('\n\n')
+      };
+
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`Slack通知失敗: ${res.statusText}`);
+    }
+
+    await browser.close();
+  } catch (err) {
+    console.error('🚨 エラー:', err);
+    process.exit(1);
   }
 })();
