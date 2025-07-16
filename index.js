@@ -1,28 +1,45 @@
 const puppeteer = require('puppeteer');
+const axios = require('axios');
+require('dotenv').config();
 
 (async () => {
   const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'] // セキュリティ対策で必須
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
   const page = await browser.newPage();
-  await page.goto('https://airdrops.io/', { waitUntil: 'domcontentloaded' });
+  await page.goto('https://airdrops.io/', { waitUntil: 'networkidle2' });
 
-  const data = await page.evaluate(() => {
-    const items = Array.from(document.querySelectorAll('.airdrops > div'));
-    
-    return items.map(card => {
-      const title = card.querySelector('h3')?.innerText?.trim() || '';
-      const description = card.querySelector('p')?.innerText?.trim() || '';
-      const link = card.querySelector('a')?.href?.trim() || '';
-
-      return (title && link)
-        ? { title, description, link }
-        : null; // 無効なデータは除外
-    }).filter(Boolean); // null や undefined を除外
+  const airdrops = await page.evaluate(() => {
+    const items = Array.from(document.querySelectorAll('.airdrops > div')).slice(0, 3);
+    return items.map(card => ({
+      title: card.querySelector('h3')?.innerText ?? 'No Title',
+      description: card.querySelector('p')?.innerText ?? 'No Description',
+      link: card.querySelector('a')?.href ?? '',
+    }));
   });
 
-  console.log(JSON.stringify(data, null, 2)); // 整形して表示（Make連携しやすい）
-  
   await browser.close();
+
+  // 🧠 Slack送信用テキストを整形
+  const message = airdrops.map(drop => 
+    `🪙 *${drop.title}*\n📃 ${drop.description}\n🔗 <${drop.link}>`
+  ).join('\n\n');
+
+  // ✅ Slack通知
+  const slackWebhook = process.env.SLACK_WEBHOOK_URL;
+  if (!slackWebhook) {
+    console.error('❌ SLACK_WEBHOOK_URL が未設定です。');
+    process.exit(1);
+  }
+
+  try {
+    await axios.post(slackWebhook, {
+      text: `🚀 今日の注目エアドロップ速報（airdrops.io より）\n\n${message}`,
+    });
+    console.log('✅ Slackに送信しました。');
+  } catch (error) {
+    console.error('❌ Slackへの送信に失敗:', error.message);
+  }
 })();
