@@ -22,12 +22,10 @@ require('dotenv').config();
 
   await browser.close();
 
-  // 🧠 Slack送信用テキストを整形
   const message = airdrops.map(drop => 
     `🪙 *${drop.title}*\n📃 ${drop.description}\n🔗 <${drop.link}>`
   ).join('\n\n');
 
-  // ✅ Slack通知
   const slackWebhook = process.env.SLACK_WEBHOOK_URL;
   if (!slackWebhook) {
     console.error('❌ SLACK_WEBHOOK_URL が未設定です。');
