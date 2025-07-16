@@ -1,8 +1,8 @@
-name: Airdrop Notifier を実行する
+name: Airdrop Notifier
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 毎日UTC0時（日本時間9時）
+    - cron: '0 0 * * *' # 毎日09:00 JSTに実行
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Puppeteer 依存をインストール
+      - name: Puppeteer の依存をインストール
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -44,4 +44,7 @@ jobs:
         run: npm install
 
       - name: スクレーパーを実行
-        run: node インデックス.js
+        run: node index.js
+
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
