@@ -1,28 +1,31 @@
-name: Run Airdrop Notifier
+name: Airdrop Notifier を実行する
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 毎日0時（UTC）= 日本時間09:00
+    - cron: '0 0 * * *' # 毎日UTC0時（日本時間9時）
   workflow_dispatch:
 
 jobs:
-  scrape:
+  notify:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Node.js をセットアップ
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install dependencies for Puppeteer
+      - name: Puppeteer 依存をインストール
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             ca-certificates \
             fonts-liberation \
+            libappindicator3-1 \
+            libasound2 \
             libatk-bridge2.0-0 \
             libatk1.0-0 \
             libcups2 \
@@ -32,24 +35,13 @@ jobs:
             libnss3 \
             libx11-xcb1 \
             libxcomposite1 \
-            libxcursor1 \
             libxdamage1 \
             libxrandr2 \
-            libxss1 \
-            libxtst6 \
             xdg-utils \
-            wget \
-            libx11-6 \
-            libxext6 \
-            libxfixes3 \
-            libglib2.0-0 \
-            libgtk-3-0 \
-            libxrender1 \
-            libxi6 \
-            libgbm1
+            wget
 
-      - name: Install NPM packages
+      - name: NPM パッケージをインストール
         run: npm install
 
-      - name: Run scraper
-        run: node index.js
+      - name: スクレーパーを実行
+        run: node インデックス.js
