@@ -1,10 +1,13 @@
-const fs = require('fs');
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox']  // ← これを追加！
+  });
   const page = await browser.newPage();
-  await page.goto('https://airdrops.io/', { waitUntil: 'domcontentloaded' });
+  await page.goto('https://airdrops.io/');
 
   const data = await page.evaluate(() => {
     const items = Array.from(document.querySelectorAll('.airdrops > div')).slice(0, 3);
@@ -15,10 +18,11 @@ const puppeteer = require('puppeteer');
     }));
   });
 
-  // 保存処理（ファイル：output.txt）
-  fs.writeFileSync('output.txt', JSON.stringify(data, null, 2), 'utf-8');
+  const output = data.map(entry =>
+    `🪙 ${entry.title}\n📃 ${entry.description}\n🔗 ${entry.link}\n`
+  ).join('\n');
 
-  console.log('✅ Airdrop情報を output.txt に保存しました');
-  console.log(data); // ログにも出力
+  fs.writeFileSync('output.txt', output);
+  console.log('✅ output.txt saved');
   await browser.close();
 })();
