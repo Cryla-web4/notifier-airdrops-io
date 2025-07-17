@@ -1,6 +1,8 @@
 import puppeteer from 'puppeteer';
-const axios = require('axios');
-require('dotenv').config();
+import axios from 'axios';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 (async () => {
   const browser = await puppeteer.launch({
