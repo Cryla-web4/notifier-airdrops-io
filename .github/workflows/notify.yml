@@ -22,7 +22,7 @@ jobs:
         run: npm install
 
       - name: Run Puppeteer script
-        run: node index.cjs
+        run: node index.js
 
       - name: Upload result as artifact (optional)
         if: success()
