@@ -1,19 +1,19 @@
-name: Daily Airdrop Notifier
+name: Notify Airdrops
 
 on:
   schedule:
-    - cron: '0 15 * * *'  # 毎日 日本時間 0:00 に実行（UTCで15:00）
-  workflow_dispatch:       # 手動実行も許可
+    - cron: '0 0 * * *' # 毎日0時に実行（UTC）
+  workflow_dispatch:     # 手動実行も可能
 
 jobs:
-  notify:
+  scrape-and-save:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -24,11 +24,8 @@ jobs:
       - name: Run Puppeteer script
         run: node index.js
 
-      - name: Upload result as artifact (optional)
-        if: success()
+      - name: Save output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: airdrop-result
-          path: |
-            output.txt
-            logs/
+          name: airdrop-output
+          path: output.txt
