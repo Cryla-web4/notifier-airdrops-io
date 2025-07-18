@@ -1,30 +1,38 @@
 name: Notify Airdrops
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *' # 毎日0時に実行（UTC）
-  workflow_dispatch:     # 手動実行も可能
+    - cron: '0 0 * * *'  # 毎日深夜0時に実行（日本時間9時）
 
 jobs:
-  scrape-and-save:
+  scrape-and-notify:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Node.js をセットアップ
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Puppeteer用の依存ライブラリをインストール
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxss1 libasound2 libatk1.0-0 libnss3 libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libgtk-3-0
+
+      - name: 依存パッケージをインストール
         run: npm install
 
-      - name: Run Puppeteer script
+      - name: 環境変数を設定（OpenAI API Key）
+        run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+
+      - name: スクリプトを実行
         run: node index.js
 
-      - name: Save output as artifact
+      - name: output.txt を保存
         uses: actions/upload-artifact@v4
         with:
           name: airdrop-output
