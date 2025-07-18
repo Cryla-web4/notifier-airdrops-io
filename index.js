@@ -1,79 +1,63 @@
 const puppeteer = require('puppeteer');
-const fs = require('fs');
 const { Configuration, OpenAIApi } = require('openai');
+const axios = require('axios');
+require('dotenv').config();
 
-// OpenAI APIキー（環境変数から取得）
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
+
+const configuration = new Configuration({ apiKey: OPENAI_API_KEY });
+const openai = new OpenAIApi(configuration);
 
 (async () => {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
-  const page = await browser.newPage();
-  await page.goto('https://airdrops.io/', { waitUntil: 'domcontentloaded' });
 
-  // すべての案件を取得（最新順）
-  const airdrops = await page.evaluate(() => {
-    const items = Array.from(document.querySelectorAll('.airdrops > div'));
-    return items.map(card => {
-      const title = card.querySelector('h3')?.innerText ?? 'No Title';
-      const description = card.querySelector('p')?.innerText ?? 'No Description';
-      const link = card.querySelector('a')?.href ?? '';
-      return { title, description, link };
-    });
+  const page = await browser.newPage();
+  await page.goto('https://airdrops.io/');
+
+  const data = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.airdrops > div')).map(card => ({
+      title: card.querySelector('h3')?.innerText ?? 'No Title',
+      description: card.querySelector('p')?.innerText ?? 'No Description',
+      url: card.querySelector('a')?.href ?? '',
+    }));
   });
 
   await browser.close();
 
-  // OpenAIでフィルタリング（非ゲーム系・詐欺度7未満）
-  const configuration = new Configuration({ apiKey: OPENAI_API_KEY });
-  const openai = new OpenAIApi(configuration);
-
   const filtered = [];
-
-  for (const item of airdrops) {
-    const prompt = `
-次のプロジェクトのジャンルと詐欺度を10点満点で評価してください。
-
-プロジェクト名: ${item.title}
-説明: ${item.description}
-
-出力形式: 
-{
-  "ジャンル": "DeFi / Game / NFT / その他",
-  "詐欺度": 数字 (1～10の整数)
-}
-    `.trim();
-
+  for (const item of data) {
     try {
+      const prompt = `以下は暗号資産のエアドロップ情報です。\n\nタイトル: ${item.title}\n説明: ${item.description}\n\n1. この案件のジャンル（ゲーム or 非ゲーム）を教えてください。\n2. この案件の詐欺度（1〜10）を数値で評価してください。`;
+
       const response = await openai.createChatCompletion({
         model: 'gpt-4',
-        messages: [{ role: 'user', content: prompt }]
+        messages: [{ role: 'user', content: prompt }],
       });
 
-      const result = JSON.parse(response.data.choices[0].message.content);
+      const text = response.data.choices[0].message.content;
 
-      if (result.ジャンル !== 'Game' && result.詐欺度 < 7) {
-        filtered.push({ ...item, genre: result.ジャンル, risk: result.詐欺度 });
+      const genre = text.includes('非ゲーム') ? '非ゲーム' : (text.includes('ゲーム') ? 'ゲーム' : '不明');
+      const match = text.match(/詐欺度[：: ]?(\d+)/);
+      const risk = match ? parseInt(match[1], 10) : 10;
+
+      if (genre === '非ゲーム' && risk < 7) {
+        filtered.push({ ...item, 評価: text });
       }
-    } catch (err) {
-      console.error('OpenAI error:', err);
+
+      if (filtered.length >= 3) break;
+
+    } catch (e) {
+      console.error('評価エラー:', e);
     }
   }
 
-  // 上位3件のみ
-  const top3 = filtered.slice(0, 3);
-
-  // 保存用テキスト生成
-  const output = top3.map((item, i) => `
-${i + 1}. 🪙 ${item.title}
-📃 ${item.description}
-🎮 ジャンル: ${item.genre}
-🚨 詐欺度: ${item.risk}/10
-🔗 URL: ${item.link}
-  `.trim()).join('\n\n');
-
-  fs.writeFileSync('output.txt', output, 'utf8');
-  console.log('✅ フィルタ済みのエアドロップ情報を output.txt に保存しました。');
+  for (const item of filtered) {
+    await axios.post(SLACK_WEBHOOK_URL, {
+      text: `🪙 *${item.title}*\n📃 ${item.description}\n🔗 ${item.url}\n🤖 評価:\n${item.評価}`
+    });
+  }
 })();
