@@ -1,4 +1,4 @@
-// index.js （ChatGPT評価統合済み）
+// index.js（ChatGPT評価 + フィルタ付き）
 
 const puppeteer = require('puppeteer');
 const fs = require('fs');
@@ -28,7 +28,7 @@ async function evaluateProject(title, description) {
   await page.goto('https://airdrops.io/');
 
   const data = await page.evaluate(() => {
-    const items = Array.from(document.querySelectorAll('.airdrops > div')).slice(0, 3);
+    const items = Array.from(document.querySelectorAll('.airdrops > div'));
     return items.map(card => ({
       title: card.querySelector('h3')?.innerText ?? 'No Title',
       description: card.querySelector('p')?.innerText ?? 'No Description',
@@ -40,6 +40,18 @@ async function evaluateProject(title, description) {
 
   for (const item of data) {
     const evaluation = await evaluateProject(item.title, item.description);
+
+    const genreMatch = evaluation.match(/ジャンル:\s*(.+)/);
+    const riskMatch = evaluation.match(/詐欺度:\s*(\d+)\/10/);
+
+    const genre = genreMatch ? genreMatch[1].trim() : '';
+    const risk = riskMatch ? parseInt(riskMatch[1]) : 10;
+
+    if (genre.includes('ゲーム') || risk >= 7) {
+      console.log(`❌ 除外: ${item.title}（ジャンル: ${genre}, 詐欺度: ${risk}）`);
+      continue;
+    }
+
     output += `タイトル: ${item.title}\n説明: ${item.description}\nリンク: ${item.link}\n${evaluation}\n\n---\n\n`;
   }
 
