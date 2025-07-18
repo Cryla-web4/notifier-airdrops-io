@@ -1,15 +1,24 @@
 {
   "name": "notifier-airdrops-io",
   "version": "1.0.0",
+  "description": "くりら式エアドロップ通知Bot",
   "main": "index.js",
-  "type": "commonjs",
   "scripts": {
     "start": "node index.js"
   },
+  "keywords": [
+    "airdrop",
+    "notifier",
+    "web3",
+    "puppeteer",
+    "slack"
+  ],
+  "author": "Cryla",
+  "license": "MIT",
   "dependencies": {
     "axios": "^1.6.8",
-    "puppeteer": "^21.3.8",
-    "openai": "^4.50.2",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "openai": "^4.50.0",
+    "puppeteer": "^21.3.8"
   }
 }
