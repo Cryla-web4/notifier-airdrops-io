@@ -1,62 +1,85 @@
-// index.js（ChatGPT評価 + フィルタ付き）
-
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-const { Configuration, OpenAIApi } = require('openai');
-require('dotenv').config();
+const axios = require('axios');
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY
-});
-const openai = new OpenAIApi(configuration);
-
-async function evaluateProject(title, description) {
-  const prompt = `以下のエアドロップ案件を評価してください。\n\n【タイトル】${title}\n【説明】${description}\n\n---\n1. この案件のジャンルは？\n2. 詐欺度を10点満点で評価してください（0が安全、10が極めて危険）。\n---\n出力形式：\nジャンル: ◯◯\n詐欺度: ◯/10`;
-
-  const res = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo",
-    messages: [{ role: "user", content: prompt }],
-    temperature: 0.7
-  });
-
-  return res.data.choices[0].message.content.trim();
-}
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({ headless: 'new' });
   const page = await browser.newPage();
-  await page.goto('https://airdrops.io/');
+  await page.goto('https://airdrops.io/', { waitUntil: 'domcontentloaded' });
 
-  const data = await page.evaluate(() => {
-    const items = Array.from(document.querySelectorAll('.airdrops > div'));
-    return items.map(card => ({
+  const airdrops = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.airdrops > div')).map(card => ({
       title: card.querySelector('h3')?.innerText ?? 'No Title',
       description: card.querySelector('p')?.innerText ?? 'No Description',
-      link: card.querySelector('a')?.href ?? ''
+      link: card.querySelector('a')?.href ?? '',
     }));
   });
 
-  let output = '';
+  await browser.close();
 
-  for (const item of data) {
-    const evaluation = await evaluateProject(item.title, item.description);
+  // OpenAI APIで詐欺度とジャンル判定を実行
+  const scored = [];
+  for (const airdrop of airdrops) {
+    const prompt = `
+あなたは詐欺判定AIです。以下のエアドロップ案件について評価してください。
 
-    const genreMatch = evaluation.match(/ジャンル:\s*(.+)/);
-    const riskMatch = evaluation.match(/詐欺度:\s*(\d+)\/10/);
+---
+タイトル: ${airdrop.title}
+説明文: ${airdrop.description}
+---
 
-    const genre = genreMatch ? genreMatch[1].trim() : '';
-    const risk = riskMatch ? parseInt(riskMatch[1]) : 10;
+① この案件のジャンルは何ですか？（例：DeFi, NFT, ゲーム, DAO, ツールなど）
+② 詐欺の可能性を0～10点で評価してください（0:安全、10:高リスク）。
+日本語で箇条書きで出力してください。`;
 
-    if (genre.includes('ゲーム') || risk >= 7) {
-      console.log(`❌ 除外: ${item.title}（ジャンル: ${genre}, 詐欺度: ${risk}）`);
-      continue;
+    try {
+      const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: 'gpt-4',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const reply = response.data.choices[0].message.content;
+      const genreMatch = reply.match(/ジャンル.*?:\s*(.+)/);
+      const riskMatch = reply.match(/詐欺.*?(\d{1,2})点/);
+
+      const genre = genreMatch ? genreMatch[1] : '不明';
+      const scamScore = riskMatch ? parseInt(riskMatch[1]) : 10;
+
+      // フィルタ条件
+      if (!genre.includes('ゲーム') && scamScore < 7) {
+        scored.push({ ...airdrop, genre, scamScore });
+      }
+
+    } catch (err) {
+      console.error(`❌ OpenAI API error for "${airdrop.title}":`, err.message);
     }
-
-    output += `タイトル: ${item.title}\n説明: ${item.description}\nリンク: ${item.link}\n${evaluation}\n\n---\n\n`;
   }
 
-  fs.writeFileSync('output.txt', output, 'utf-8');
-  console.log('✅ output.txt に保存されました');
+  // 上位3件のみ通知
+  const top3 = scored.slice(0, 3);
 
-  await browser.close();
+  // Slack通知用テキスト作成
+  const output = top3.map((item, i) => 
+`🪙 ${item.title}
+📃 ${item.description}
+🔗 ${item.link}
+📂 ジャンル: ${item.genre}
+🚨 詐欺度: ${item.scamScore}/10
+
+${i < top3.length - 1 ? '------' : ''}`).join('\n');
+
+  fs.writeFileSync('output.txt', output, 'utf8');
+  console.log('✅ output.txt に保存しました');
 })();
