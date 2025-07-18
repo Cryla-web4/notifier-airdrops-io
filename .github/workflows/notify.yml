@@ -1,8 +1,8 @@
-name: スクレイピングと通知
+name: 通知する
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 毎日 0:00 に実行
+    - cron: '0 1 * * *' # 毎日10:00 JST（UTCで1:00）
   workflow_dispatch:
 
 jobs:
@@ -13,26 +13,18 @@ jobs:
     - name: リポジトリをチェックアウト
       uses: actions/checkout@v4
 
-    - name: Node.jsをセットアップ
+    - name: Node.jsをセットアップする
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: 20
 
     - name: 依存パッケージをインストールする
       run: npm install
 
     - name: 環境変数を設定（OpenAI API Key）
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      run: echo "✅ OpenAI Key Set"
+      run: |
+        echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+        echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_ENV
 
     - name: スクリプトを実行（ChatGPT評価付き）
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: node index.js
-
-    - name: Output.txtを保存
-      uses: actions/upload-artifact@v4
-      with:
-        name: output
-        path: output.txt
