@@ -1,9 +1,9 @@
 name: Notify Airdrops
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *'  # 毎日0時に実行（JSTでは9:00）
-  workflow_dispatch:     # 手動実行も許可
+    - cron: '0 0 * * *'  # 毎日深夜0時（日本時間9時）に実行
 
 jobs:
   scrape-and-notify:
@@ -11,34 +11,30 @@ jobs:
 
     steps:
       - name: リポジトリをチェックアウト
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Node.js をセットアップ
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Puppeteer用の依存ライブラリをインストール
+      - name: Puppeteer 用の依存ライブラリをインストール
         run: |
           sudo apt-get update
           sudo apt-get install -y libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 \
-            libgbm1 libasound2 libpangocairo-1.0-0 libatk-bridge2.0-0 libgtk-3-0
+                                  libgbm1 libasound2 libatk1.0-0 libnss3 \
+                                  libgtk-3-0 libpangocairo-1.0-0 libatk-bridge2.0-0
 
       - name: 依存パッケージをインストール
         run: npm ci
 
-      - name: 環境変数を設定（OpenAI API Key）
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: echo "✅ OpenAI Key Set"
-
-      - name: スクリプトを実行
+      - name: スクリプトを実行（ChatGPT評価付き）
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node index.js
 
       - name: output.txt を保存
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: output
+          name: airdrop-output
           path: output.txt
