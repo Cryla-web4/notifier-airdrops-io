@@ -19,7 +19,7 @@ jobs:
         node-version: '20'
 
     - name: 依存パッケージをインストールする
-      run: npm ci
+      run: npm install
 
     - name: 環境変数を設定（OpenAI API Key）
       env:
