@@ -1,11 +1,29 @@
+// index.js （ChatGPT評価統合済み）
+
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const { Configuration, OpenAIApi } = require('openai');
+require('dotenv').config();
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY
+});
+const openai = new OpenAIApi(configuration);
+
+async function evaluateProject(title, description) {
+  const prompt = `以下のエアドロップ案件を評価してください。\n\n【タイトル】${title}\n【説明】${description}\n\n---\n1. この案件のジャンルは？\n2. 詐欺度を10点満点で評価してください（0が安全、10が極めて危険）。\n---\n出力形式：\nジャンル: ◯◯\n詐欺度: ◯/10`;
+
+  const res = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo",
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0.7
+  });
+
+  return res.data.choices[0].message.content.trim();
+}
 
 (async () => {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox']  // ← これを追加！
-  });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
   await page.goto('https://airdrops.io/');
 
@@ -14,15 +32,19 @@ const fs = require('fs');
     return items.map(card => ({
       title: card.querySelector('h3')?.innerText ?? 'No Title',
       description: card.querySelector('p')?.innerText ?? 'No Description',
-      link: card.querySelector('a')?.href ?? '',
+      link: card.querySelector('a')?.href ?? ''
     }));
   });
 
-  const output = data.map(entry =>
-    `🪙 ${entry.title}\n📃 ${entry.description}\n🔗 ${entry.link}\n`
-  ).join('\n');
+  let output = '';
 
-  fs.writeFileSync('output.txt', output);
-  console.log('✅ output.txt saved');
+  for (const item of data) {
+    const evaluation = await evaluateProject(item.title, item.description);
+    output += `タイトル: ${item.title}\n説明: ${item.description}\nリンク: ${item.link}\n${evaluation}\n\n---\n\n`;
+  }
+
+  fs.writeFileSync('output.txt', output, 'utf-8');
+  console.log('✅ output.txt に保存されました');
+
   await browser.close();
 })();
