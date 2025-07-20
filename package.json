@@ -1,24 +1,14 @@
-{
-  "name": "notifier-airdrops-io",
-  "version": "1.0.0",
-  "description": "くりら式エアドロップ通知Bot",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
+[
+  {
+    "title": "EARN FREE SOL EVERY HOUR",
+    "link": "https://airdrops.io/solpump/",
+    "image": "https://airdrops.io/wp-content/uploads/2025/07/SolPump-Header.png",
+    "source": "airdrops.io"
   },
-  "keywords": [
-    "airdrop",
-    "notifier",
-    "web3",
-    "puppeteer",
-    "slack"
-  ],
-  "author": "Cryla",
-  "license": "MIT",
-  "dependencies": {
-    "axios": "^1.6.8",
-    "dotenv": "^16.4.5",
-    "openai": "^4.50.0",
-    "puppeteer": "^21.3.8"
+  {
+    "title": "230M $SNOOPY AIRDROP IS LIVE! CLAIM UP TO 15,500 TOKENS",
+    "link": "https://airdrops.io/snoopy-ai/",
+    "image": "https://airdrops.io/wp-content/uploads/2025/07/Site-wide-Header.png",
+    "source": "airdrops.io"
   }
-}
+]
