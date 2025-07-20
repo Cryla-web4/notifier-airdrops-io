@@ -1,30 +1,24 @@
-name: 通知する
+name: Run Airdrop Bot Every Morning
 
 on:
   schedule:
-    - cron: '0 1 * * *' # 毎日10:00 JST（UTCで1:00）
-  workflow_dispatch:
+    - cron: '0 0 * * *'  # 毎日 UTC 0時（＝日本時間 9:00）
+  workflow_dispatch:     # 手動実行も可能にする
 
 jobs:
-  notify:
+  run-airdrop-bot:
     runs-on: ubuntu-latest
-
     steps:
-    - name: リポジトリをチェックアウト
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Node.jsをセットアップする
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
 
-    - name: 依存パッケージをインストールする
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: 環境変数を設定（OpenAI API Key）
-      run: |
-        echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
-        echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_ENV
-
-    - name: スクリプトを実行（ChatGPT評価付き）
-      run: node index.js
+      - name: Run the bot
+        run: node index.js
