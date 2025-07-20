@@ -1,14 +1,21 @@
-[
-  {
-    "title": "EARN FREE SOL EVERY HOUR",
-    "link": "https://airdrops.io/solpump/",
-    "image": "https://airdrops.io/wp-content/uploads/2025/07/SolPump-Header.png",
-    "source": "airdrops.io"
+{
+  "name": "kurira-airdrop-bot",
+  "version": "1.0.0",
+  "description": "くりら式通知Bot - airdrops.io を毎朝チェックしてSlackに通知",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
   },
-  {
-    "title": "230M $SNOOPY AIRDROP IS LIVE! CLAIM UP TO 15,500 TOKENS",
-    "link": "https://airdrops.io/snoopy-ai/",
-    "image": "https://airdrops.io/wp-content/uploads/2025/07/Site-wide-Header.png",
-    "source": "airdrops.io"
+  "keywords": [
+    "airdrops",
+    "puppeteer",
+    "GitHub Actions",
+    "automation",
+    "Slack"
+  ],
+  "author": "くりら",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.3.8"
   }
-]
+}
