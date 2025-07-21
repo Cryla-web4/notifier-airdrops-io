@@ -1,24 +1,25 @@
-name: Run Airdrop Bot Every Morning
+name: Run Airdrop Notifier
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # 毎日 9:00 JST（= UTC 0:00）
   workflow_dispatch:
 
 jobs:
-  run-airdrop-bot:
+  analyze-airdrops:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '18'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run the bot
+      - name: Run script with OpenAI API key
         run: node index.js
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
