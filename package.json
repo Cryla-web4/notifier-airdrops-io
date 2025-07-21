@@ -1,21 +1,24 @@
 {
-  "name": "kurira-airdrop-bot",
+  "name": "notifier-airdrops-io",
   "version": "1.0.0",
-  "description": "くりら式通知Bot - airdrops.io を毎朝チェックしてSlackに通知",
+  "description": "Airdrop情報をスクレイピングし、OpenAIで詐欺度・ジャンル分析して通知するBot",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.js"
   },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "openai": "^4.48.0",
+    "puppeteer": "^21.3.8"
+  },
   "keywords": [
     "airdrops",
+    "openai",
     "puppeteer",
-    "GitHub Actions",
-    "automation",
-    "Slack"
+    "notifier",
+    "crypto"
   ],
-  "author": "くりら",
-  "license": "MIT",
-  "dependencies": {
-    "puppeteer": "^21.3.8"
-  }
+  "author": "Cryla-web4",
+  "license": "MIT"
 }
